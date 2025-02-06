@@ -1,0 +1,63 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "ListObjectsV2",
+  "States": {
+    "ListObjectsV2": {
+      "Type": "Task",
+      "Arguments": {
+        "Bucket": "buckettestedynaoconnectorzxcv",
+        "Prefix": "tabelas"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:s3:listObjectsV2",
+      "Next": "Map"
+    },
+    "Map": {
+      "Type": "Map",
+      "Items": "{% $states.input.Contents %}",
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "Pass (1)",
+        "States": {
+          "Pass (1)": {
+            "Type": "Pass",
+            "Next": "GetObject",
+            "Assign": {
+              "chave_do_arquivo": "{% $states.input.Key %}"
+            }
+          },
+          "GetObject": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::aws-sdk:s3:getObject",
+            "Arguments": {
+              "Bucket": "buckettestedynaoconnectorzxcv",
+              "Key": "{% $states.input.Key %}"
+            },
+            "Next": "Pass"
+          },
+          "Pass": {
+            "Type": "Pass",
+            "Output": {
+              "chave": "{% $chave_do_arquivo %}",
+              "Body": "{% $merge([$parse($states.input.Body), {'status': 'maluco'}])  %}"
+            },
+            "Next": "PutObject"
+          },
+          "PutObject": {
+            "Type": "Task",
+            "Arguments": {
+              "Body": "{% $states.input.Body %}",
+              "Bucket": "buckettestedynaoconnectorzxcv",
+              "Key": "{% $states.input.chave %}"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:s3:putObject",
+            "End": true
+          }
+        }
+      },
+      "End": true
+    }
+  },
+  "QueryLanguage": "JSONata"
+}
