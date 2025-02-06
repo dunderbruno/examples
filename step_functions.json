@@ -1,0 +1,120 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Pass",
+  "States": {
+    "Pass": {
+      "Type": "Pass",
+      "Next": "ListTables",
+      "Assign": {
+        "minha_variavel": "abacaxi",
+        "minha_alternativa": "azul",
+        "elemento": "{% $states.input.novo_elemento %}"
+      }
+    },
+    "ListTables": {
+      "Type": "Task",
+      "Arguments": {},
+      "Resource": "arn:aws:states:::aws-sdk:dynamodb:listTables",
+      "Next": "Map"
+    },
+    "Map": {
+      "Type": "Map",
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "INTERNO",
+        "States": {
+          "INTERNO": {
+            "Type": "Pass",
+            "End": true,
+            "Output": {
+              "guardar": "{% $states.input & 'sufixo' %}"
+            }
+          }
+        }
+      },
+      "Items": "{% $states.input.TableNames %}",
+      "Next": "Map (1)"
+    },
+    "Map (1)": {
+      "Type": "Map",
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "REPROCESSAR",
+        "States": {
+          "REPROCESSAR": {
+            "Type": "Pass",
+            "End": true,
+            "Output": {
+              "REPROCESSADO": "{% $states.input.guardar %}"
+            }
+          }
+        }
+      },
+      "Next": "RECUPERAR",
+      "Items": "{% $states.input %}"
+    },
+    "RECUPERAR": {
+      "Type": "Pass",
+      "Output": {
+        "recuperar": "{% $minha_variavel%}",
+        "informacao_do_evento": "{% $elemento %}"
+      },
+      "Next": "Choice",
+      "Assign": {
+        "conteudo": "{% $states.input %}"
+      }
+    },
+    "Choice": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "LADO A",
+          "Condition": "{% ($minha_variavel = \"abacaxi\") and ($minha_alternativa = \"vermelho\") %}",
+          "Comment": "ABACAXI E AZUL"
+        },
+        {
+          "Next": "LADO B",
+          "Condition": "{% ($minha_variavel = \"abacaxi\") and ($minha_alternativa = \"azul\") %}",
+          "Comment": "ABACAXI E VERMELHO"
+        }
+      ]
+    },
+    "LADO A": {
+      "Type": "Pass",
+      "End": true
+    },
+    "LADO B": {
+      "Type": "Pass",
+      "Next": "PutObject"
+    },
+    "PutObject": {
+      "Type": "Task",
+      "Arguments": {
+        "Body": "{% $conteudo %}",
+        "Bucket": "bucket_exemplo",
+        "Key": "exemplo.json"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:s3:putObject",
+      "Next": "GetObject"
+    },
+    "GetObject": {
+      "Type": "Task",
+      "Arguments": {
+        "Bucket": "bucket_exemplo",
+        "Key": "exemplo.json"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:s3:getObject",
+      "Next": "Pass (1)"
+    },
+    "Pass (1)": {
+      "Type": "Pass",
+      "End": true,
+      "Output": "{% $parse($states.input.Body) %}"
+    }
+  },
+  "QueryLanguage": "JSONata"
+}
