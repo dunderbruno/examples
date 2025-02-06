@@ -1,0 +1,102 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "ListObjectsV2",
+  "States": {
+    "ListObjectsV2": {
+      "Type": "Task",
+      "Arguments": {
+        "Bucket": "bucket_exemplo",
+        "Prefix": "tabelas"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:s3:listObjectsV2",
+      "Next": "Choice (1)"
+    },
+    "Choice (1)": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "ListTables",
+          "Condition": "{% $states.input.KeyCount = 0 %}"
+        }
+      ],
+      "Default": "Map"
+    },
+    "ListTables": {
+      "Type": "Task",
+      "Arguments": {},
+      "Resource": "arn:aws:states:::aws-sdk:dynamodb:listTables",
+      "Next": "Map (1)"
+    },
+    "Map (1)": {
+      "Type": "Map",
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "Pass (2)",
+        "States": {
+          "Pass (2)": {
+            "Type": "Pass",
+            "End": true,
+            "Output": {
+              "chave": "{% 'tabelas/' & $states.input &'.json' %}",
+              "Body": {
+                "table_name": "{% $states.input %}",
+                "status": "maluco",
+                "filled_by": "automation"
+              }
+            }
+          }
+        }
+      },
+      "Items": "{% $states.input.TableNames %}",
+      "Next": "Array SDK - verificar"
+    },
+    "Array SDK - verificar": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Map": {
+      "Type": "Map",
+      "Items": "{% $states.input.Contents %}",
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "Pass (1)",
+        "States": {
+          "Pass (1)": {
+            "Type": "Pass",
+            "Next": "GetObject",
+            "Assign": {
+              "chave_do_arquivo": "{% $states.input.Key %}"
+            }
+          },
+          "GetObject": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::aws-sdk:s3:getObject",
+            "Arguments": {
+              "Bucket": "bucket_exemplo",
+              "Key": "{% $states.input.Key %}"
+            },
+            "Next": "Pass"
+          },
+          "Pass": {
+            "Type": "Pass",
+            "Output": {
+              "chave": "{% $chave_do_arquivo %}",
+              "Body": "{% $merge([$parse($states.input.Body), {'status': 'maluco'}])  %}"
+            },
+            "End": true
+          }
+        }
+      },
+      "Next": "Array S3 - verificar"
+    },
+    "Array S3 - verificar": {
+      "Type": "Pass",
+      "End": true
+    }
+  },
+  "QueryLanguage": "JSONata"
+}
