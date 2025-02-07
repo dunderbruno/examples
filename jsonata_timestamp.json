@@ -1,0 +1,27 @@
+{
+  "QueryLanguage": "JSONata",
+  "Comment": "A description of my state machine",
+  "StartAt": "Pass",
+  "States": {
+    "Pass": {
+      "Type": "Pass",
+      "Output": {
+        "millis": "{% $millis() %}",
+        "outro": "{% $fromMillis($millis()) %}",
+        "now": "{% $now() %}",
+        "to_milles": "{% $toMillis('2025-02-07T14:19:51.788Z') %}",
+        "to_milles_zero": "{% $toMillis('2025-02-07') %}",
+        "from_milles": "{% $fromMillis(1738886400000) %}",
+        "menos_1_dia_unix": "{% $sum([1738886400000, -86400000]) %}",
+        "reduz_um_dia": "{% $fromMillis($sum([1738886400000, -86400000])) %}",
+        "completa_o_dia": "{% $fromMillis($sum([1738886400000, 86399000])) %}",
+        "extrair_horas": "{% $fromMillis($millis(), '[H]:[m]:[s]', 'utc') %}",
+        "ontem_00h": "{% $fromMillis($millis() - 86400000, '[Y0001]-[M01]-[D01]T00:00:00.000Z') %}",
+        "ontem_00h_unix": "{% $toMillis($fromMillis($millis() - 86400000, '[Y0001]-[M01]-[D01]T00:00:00.000Z')) %}",
+        "ontem_23h59m59s": "{% $fromMillis($millis() - 86400000, '[Y0001]-[M01]-[D01]T23:59:59.000Z') %}",
+        "ontem_23h59m59s_unix": "{% $toMillis($fromMillis($millis() - 86400000, '[Y0001]-[M01]-[D01]T23:59:59.000Z')) %}"
+      },
+      "End": true
+    }
+  }
+}
