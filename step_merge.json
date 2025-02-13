@@ -1,0 +1,146 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Lista A",
+  "States": {
+    "Lista A": {
+      "Type": "Pass",
+      "Next": "Pass (4)",
+      "Assign": {
+        "primeira": [
+          {
+            "table_name": "tabela_um",
+            "status": "true"
+          },
+          {
+            "table_name": "tabela_dois",
+            "status": "false"
+          }
+        ]
+      }
+    },
+    "Pass (4)": {
+      "Type": "Pass",
+      "Next": "Pass",
+      "Output": "{% $primeira[status=\"true\"] %}"
+    },
+    "Pass": {
+      "Type": "Pass",
+      "Next": "Lista B",
+      "Output": "{% $distinct($primeira.table_name) %}",
+      "Assign": {
+        "referencia": "{% $distinct($primeira.table_name) %}"
+      }
+    },
+    "Lista B": {
+      "Type": "Pass",
+      "Next": "Map",
+      "Assign": {
+        "segunda": [
+          {
+            "table_name": "tabela_dois",
+            "status": "false"
+          },
+          {
+            "table_name": "tabela_tres",
+            "status": "true"
+          },
+          {
+            "table_name": "tabela_quatro",
+            "status": "false"
+          }
+        ]
+      }
+    },
+    "Map": {
+      "Type": "Map",
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "Choice",
+        "States": {
+          "Choice": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "Next": "Pass (2)",
+                "Condition": "{% $states.input.table_name in $referencia %}"
+              }
+            ],
+            "Default": "Pass (1)"
+          },
+          "Pass (2)": {
+            "Type": "Pass",
+            "End": true,
+            "Output": {
+              "status_arquivo": "antigo",
+              "item": "{% $states.input %}"
+            }
+          },
+          "Pass (1)": {
+            "Type": "Pass",
+            "End": true,
+            "Output": {
+              "status_arquivo": "novo",
+              "item": "{% $states.input %}"
+            }
+          }
+        }
+      },
+      "Next": "VERIFICA PRIMEIRA",
+      "Items": "{% $segunda %}"
+    },
+    "VERIFICA PRIMEIRA": {
+      "Type": "Pass",
+      "Next": "Map (1)",
+      "Output": "{% $states.input[status_arquivo=\"novo\"] %}"
+    },
+    "Map (1)": {
+      "Type": "Map",
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "Pass (3)",
+        "States": {
+          "Pass (3)": {
+            "Type": "Pass",
+            "End": true,
+            "Output": "{% $states.input.item %}"
+          }
+        }
+      },
+      "Next": "NOVOS FORMATADOS"
+    },
+    "NOVOS FORMATADOS": {
+      "Type": "Pass",
+      "Next": "merge definitivo"
+    },
+    "merge definitivo": {
+      "Type": "Pass",
+      "Next": "Testando Merge",
+      "Output": "{% $append($primeira, $states.input) %}"
+    },
+    "Testando Merge": {
+      "Type": "Pass",
+      "Output": "{% $append($primeira, $segunda) %}",
+      "Next": "Será que foi"
+    },
+    "Será que foi": {
+      "Type": "Pass",
+      "Next": "JUNTAR",
+      "Output": "{% $states.input[$distinct('table_name')] %}"
+    },
+    "JUNTAR": {
+      "Type": "Pass",
+      "Output": "{%  $distinct($append($primeira.table_name, $segunda.table_name))%}",
+      "Next": "JUNTAR (1)"
+    },
+    "JUNTAR (1)": {
+      "Type": "Pass",
+      "Output": "{%  $distinct($append($primeira.table_name, $segunda.table_name))%}",
+      "End": true
+    }
+  },
+  "QueryLanguage": "JSONata"
+}
