@@ -1,10 +1,10 @@
 {
   "Comment": "A description of my state machine",
-  "StartAt": "Lista A",
+  "StartAt": "Origem A",
   "States": {
-    "Lista A": {
+    "Origem A": {
       "Type": "Pass",
-      "Next": "Pass (4)",
+      "Next": "Lista de Nomes",
       "Assign": {
         "primeira": [
           {
@@ -13,25 +13,20 @@
           },
           {
             "table_name": "tabela_dois",
-            "status": "false"
+            "status": "true"
           }
         ]
       }
     },
-    "Pass (4)": {
+    "Lista de Nomes": {
       "Type": "Pass",
-      "Next": "Pass",
-      "Output": "{% $primeira[status=\"true\"] %}"
-    },
-    "Pass": {
-      "Type": "Pass",
-      "Next": "Lista B",
+      "Next": "Origem B",
       "Output": "{% $distinct($primeira.table_name) %}",
       "Assign": {
         "referencia": "{% $distinct($primeira.table_name) %}"
       }
     },
-    "Lista B": {
+    "Origem B": {
       "Type": "Pass",
       "Next": "Map",
       "Assign": {
@@ -42,7 +37,7 @@
           },
           {
             "table_name": "tabela_tres",
-            "status": "true"
+            "status": "false"
           },
           {
             "table_name": "tabela_quatro",
@@ -57,9 +52,9 @@
         "ProcessorConfig": {
           "Mode": "INLINE"
         },
-        "StartAt": "Choice",
+        "StartAt": "Novo ou Antigo?",
         "States": {
-          "Choice": {
+          "Novo ou Antigo?": {
             "Type": "Choice",
             "Choices": [
               {
@@ -87,10 +82,10 @@
           }
         }
       },
-      "Next": "VERIFICA PRIMEIRA",
+      "Next": "FILTRA ITENS NOVOS",
       "Items": "{% $segunda %}"
     },
-    "VERIFICA PRIMEIRA": {
+    "FILTRA ITENS NOVOS": {
       "Type": "Pass",
       "Next": "Map (1)",
       "Output": "{% $states.input[status_arquivo=\"novo\"] %}"
@@ -101,44 +96,20 @@
         "ProcessorConfig": {
           "Mode": "INLINE"
         },
-        "StartAt": "Pass (3)",
+        "StartAt": "Remove tag NOVO",
         "States": {
-          "Pass (3)": {
+          "Remove tag NOVO": {
             "Type": "Pass",
             "End": true,
             "Output": "{% $states.input.item %}"
           }
         }
       },
-      "Next": "NOVOS FORMATADOS"
-    },
-    "NOVOS FORMATADOS": {
-      "Type": "Pass",
       "Next": "merge definitivo"
     },
     "merge definitivo": {
       "Type": "Pass",
-      "Next": "Testando Merge",
-      "Output": "{% $append($primeira, $states.input) %}"
-    },
-    "Testando Merge": {
-      "Type": "Pass",
-      "Output": "{% $append($primeira, $segunda) %}",
-      "Next": "Será que foi"
-    },
-    "Será que foi": {
-      "Type": "Pass",
-      "Next": "JUNTAR",
-      "Output": "{% $states.input[$distinct('table_name')] %}"
-    },
-    "JUNTAR": {
-      "Type": "Pass",
-      "Output": "{%  $distinct($append($primeira.table_name, $segunda.table_name))%}",
-      "Next": "JUNTAR (1)"
-    },
-    "JUNTAR (1)": {
-      "Type": "Pass",
-      "Output": "{%  $distinct($append($primeira.table_name, $segunda.table_name))%}",
+      "Output": "{% $append($states.input, $primeira) %}",
       "End": true
     }
   },
