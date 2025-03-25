@@ -1,0 +1,38 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Pass",
+  "States": {
+    "Pass": {
+      "Type": "Pass",
+      "Assign": {
+        "minha_lista": [
+          ""
+        ]
+      },
+      "Next": "Pass (1)"
+    },
+    "Pass (1)": {
+      "Type": "Pass",
+      "Next": "Choice"
+    },
+    "Choice": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Pass (2)",
+          "Condition": "{% $length($minha_lista[0]) = 0 %}"
+        }
+      ],
+      "Default": "Pass (3)"
+    },
+    "Pass (2)": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Pass (3)": {
+      "Type": "Pass",
+      "End": true
+    }
+  },
+  "QueryLanguage": "JSONata"
+}
